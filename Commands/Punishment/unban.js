@@ -27,12 +27,12 @@ class Unban extends Command {
 
         try {
             await guild.members.unban(userId);
-            return await this.Bot.say(`User with ID ${userId} has been successfully unbanned. ✅`);
+            return await interaction.reply({ content: `User with ID ${userId} has been successfully unbanned. ✅` });
         } catch (error) {
             if (error.code === 10026) {
-                return await this.Bot.say(`❌ User with ID ${userId} is not banned.`);
+                return await interaction.reply({ content: `❌ User with ID ${userId} is not banned.`, ephemeral: true });
             } else {
-                return await this.Bot.say(`❌ An error occurred: ${error.message}`);
+                return await interaction.reply({ content: `❌ An error occurred: ${error.message}`, ephemeral: true });
             }
         }
     }
