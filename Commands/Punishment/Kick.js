@@ -26,23 +26,23 @@ class Kick extends Command {
         console.log(interaction); // Log the interaction to inspect it
 
         if (!interaction.options) {
-            return await interaction.reply( content: `❌ Interaction options are undefined.`, ephemeral: true );
+            return await interaction.reply({ content: `❌ Interaction options are undefined.`, ephemeral: true });
         }
 
         const targetUser = interaction.options.getUser('user');
         if (!targetUser) {
-            return await interaction.reply( content: `User not found!`, ephemeral: true );
+            return await interaction.reply({ content: `User not found!`, ephemeral: true });
         }
 
         // Fetch the target member
         const Target = await interaction.guild.members.fetch(targetUser.id);
         if (!Target) {
-            return await interaction.reply( content: `User not found in the guild!`, ephemeral: true );
+            return await interaction.reply({ content: `User not found in the guild!`, ephemeral: true });
         }
 
         // Check if the bot can kick the user
         if (!Target.kickable) {
-            return await interaction.reply( content: `❌ You do not have permission to kick this user!`, ephemeral: true );
+            return await interaction.reply({ content: `❌ You do not have permission to kick this user!`, ephemeral: true });
         }
 
         try {
