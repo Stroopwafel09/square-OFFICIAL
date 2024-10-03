@@ -91,7 +91,7 @@ Bot.once("ready", async() => {
 
 });
 
-Bot.login(Config.DEFAULTS.TOKEN).catch(err => {
+Bot.login(process.env.TOKEN).catch(err => {
     console.error("ERROR! An occured error while connectiong to client: " + err.message);
     Bot.destroy();
 });
