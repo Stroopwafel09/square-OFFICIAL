@@ -34,7 +34,7 @@ class Kick extends Command {
 
         await Target.kick();
 
-        return await this.Bot.send(`> ${Target} has been successfully kicked from the server. ✅`);
+        return await this.Bot.send(' ${Target} has been successfully kicked from the server. ✅');
 
     }
 
