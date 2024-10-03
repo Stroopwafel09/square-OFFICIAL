@@ -80,7 +80,7 @@ Bot.once("ready", async() => {
     });
     
     Bot.user.setPresence({
-        status: "dnd",
+        status: "online",
         activity: {
             name: Config.DEFAULTS.ACTIVITY_TEXT,
             type: "WATCHING"
