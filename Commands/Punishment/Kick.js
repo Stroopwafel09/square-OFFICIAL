@@ -26,7 +26,7 @@ class Kick extends Command {
         console.log(interaction); // Log the interaction to inspect it
 
         if (!interaction.options) {
-            return await interaction.reply({ content: `❌ Interaction options are undefined.`, ephemeral: true });
+            return await this.Bot.send({ content: `❌ Interaction options are undefined.`, ephemeral: true });
         }
 
         const targetUser = interaction.options.getUser('user');
