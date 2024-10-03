@@ -47,10 +47,10 @@ class Kick extends Command {
 
         try {
             await Target.kick();
-            return await this.Bot.send( content: `${Target} has been successfully kicked from the server. ✅` );
+            return await this.Bot.send({ content: `${Target} has been successfully kicked from the server. ✅` });
         } catch (error) {
             console.error(`Kick error: ${error}`);
-            return await this.Bot.send( content: `❌ An error occurred while trying to kick the user. Please check my permissions or the user's status.`, ephemeral: true );
+            return await this.Bot.send({ content: `❌ An error occurred while trying to kick the user. Please check my permissions or the user's status.`, ephemeral: true });
         }
     }
 }
