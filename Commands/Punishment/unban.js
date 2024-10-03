@@ -32,7 +32,7 @@ class Unban extends Command {
             if (error.code === 10026) {
                 return await interaction.reply({ content: `❌ User with ID ${userId} is not banned.`, ephemeral: true });
             } else {
-                return await interaction.reply({ content: `❌ An error occurred: ${error.message}`, ephemeral: true });
+                return await interaction.reply({ content: `❌ An error occurred while trying to unban the user. Please check my permissions or the user ID.`, ephemeral: true });
             }
         }
     }
