@@ -29,12 +29,12 @@ class Kick extends Command {
     async run(interaction, guild, member, args) {
 
         const Target = guild.members.cache.get(args[0].value);
-        if(!Target) return await this.Bot.say(User not found!);
-        if(!Target.kickable) return await this.Bot.send(❌ You do not have a permission to kick this user!);
+        if(!Target) return await this.Bot.say('User not found!');
+        if(!Target.kickable) return await this.Bot.send('❌ You do not have a permission to kick this user!');
 
         await Target.kick();
 
-        return await this.Bot.say(${Target} successfully kicked from the server. ✅);
+        return await this.Bot.say(${Target} 'successfully kicked from the server. ✅');
 
     }
 
