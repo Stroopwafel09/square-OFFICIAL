@@ -24,12 +24,12 @@ class Ban extends Command {
 
     async run(interaction, guild, member, args) {
         const Target = guild.members.cache.get(args[0].value);
-        if (!Target) return await this.Bot.say(`User not found!`);
-        if (!Target.bannable) return await this.Bot.say(`❌ You do not have permission to ban this user!`);
+        if (!Target) return await interaction.reply({ content: `User not found!`, ephemeral: true });
+        if (!Target.bannable) return await interaction.reply({ content: `❌ You do not have permission to ban this user!`, ephemeral: true });
 
         await Target.ban();
 
-        return await this.Bot.say(`${Target} has been successfully banned from the server. ✅`);
+        return await interaction.reply({ content: `${Target} has been successfully banned from the server. ✅` });
     }
 }
 
