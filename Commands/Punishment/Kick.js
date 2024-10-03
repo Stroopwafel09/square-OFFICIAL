@@ -3,11 +3,12 @@ const Command = require("../../Utils/Command.js");
 class Kick extends Command {
     
     constructor(Bot) {
+
         super(Bot, {
             enabled: true,
             required_perm: "KICK_MEMBERS",
             usages: ["kick"],
-            description: "Kick members from the guild.",
+            description: "Kick members from guild.",
             category: "Punishment",
             options: [{
                 name: "user",
@@ -16,43 +17,27 @@ class Kick extends Command {
                 required: true
             }]
         });
+
     }
 
     load() {
+            
         return;
+
     }
 
-    async run(interaction) {
-        console.log(interaction); // Log the interaction to inspect it
+    async run(interaction, guild, member, args) {
 
-        if (!interaction.options) {
-            return await this.Bot.send({ content: `❌ Interaction options are undefined.`, ephemeral: true });
-        }
+        const Target = guild.members.cache.get(args[0].value);
+        if(!Target) return await this.Bot.say(User not found!);
+        if(!Target.kickable) return await this.Bot.send(❌ You do not have a permission to kick this user!);
 
-        const targetUser = interaction.options.getUser('user');
-        if (!targetUser) {
-            return await this.Bot.send({ content: `User not found!`, ephemeral: true });
-        }
+        await Target.kick();
 
-        // Fetch the target member
-        const Target = await interaction.guild.members.fetch(targetUser.id);
-        if (!Target) {
-            return await this.Bot.send({ content: `User not found in the guild!`, ephemeral: true });
-        }
+        return await this.Bot.say(${Target} successfully kicked from the server. ✅);
 
-        // Check if the bot can kick the user
-        if (!Target.kickable) {
-            return await this.Bot.send({ content: `❌ You do not have permission to kick this user!`, ephemeral: true });
-        }
-
-        try {
-            await Target.kick();
-            return await this.Bot.send({ content: `${Target} has been successfully kicked from the server. ✅` });
-        } catch (error) {
-            console.error(`Kick error: ${error}`);
-            return await this.Bot.send({ content: `❌ An error occurred while trying to kick the user. Please check my permissions or the user's status.`, ephemeral: true });
-        }
     }
+
 }
 
-module.exports = Kick;
+module.exports = Kick; 
