@@ -23,13 +23,21 @@ class Kick extends Command {
     }
 
     async run(interaction) {
-        // Get the target user from the interaction options
+        console.log(interaction); // Log the interaction to inspect it
+
+        if (!interaction.options) {
+            return await interaction.reply({ content: `❌ Interaction options are undefined.`, ephemeral: true });
+        }
+
         const targetUser = interaction.options.getUser('user');
-        
-        // Check if the target user exists in the guild
+        if (!targetUser) {
+            return await interaction.reply({ content: `User not found!`, ephemeral: true });
+        }
+
+        // Fetch the target member
         const Target = await interaction.guild.members.fetch(targetUser.id);
         if (!Target) {
-            return await interaction.reply({ content: `User not found!`, ephemeral: true });
+            return await interaction.reply({ content: `User not found in the guild!`, ephemeral: true });
         }
 
         // Check if the bot can kick the user
