@@ -29,8 +29,13 @@ class Ping extends Command {
         // Calculate API latency
         const apiLatency = Math.round(this.Bot.ws.ping); // WebSocket ping
 
-        // Send the response with the latency details
-        return await sentMessage.edit(`🏓 Pong! Latency: ${latency}ms | API Latency: ${apiLatency}ms`);
+        // Edit the response message with latency details
+        try {
+            await sentMessage.edit(`🏓 Pong! Latency: ${latency}ms | API Latency: ${apiLatency}ms`);
+        } catch (error) {
+            console.error("Failed to edit message:", error);
+            return await this.Bot.send(interaction, `🏓 Pong! Latency: ${latency}ms | API Latency: ${apiLatency}ms (Unable to edit message)`); 
+        }
     }
 }
 
