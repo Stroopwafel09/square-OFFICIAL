@@ -25,20 +25,22 @@ class Kick extends Command {
     async run(interaction, guild, member, args) {
         console.log("Command executed by:", member.user.tag);
 
-        // 'member' is the user executing the command
-        const Target = guild.members.cache.get(args[0].value);
-        console.log("Target user:", Target);
-
-        // Check if the target user is found
-        if (!Target) {
-            return await this.Bot.send(interaction, `❌ User not found in this guild!`);
+        // Get the target user
+        const userId = args[0].value;
+        let Target;
+        
+        try {
+            Target = await guild.members.fetch(userId);
+            console.log("Target user found:", Target.user.tag);
+        } catch (error) {
+            console.log("Error fetching member:", error);
+            return await this.Bot.send(interaction, `❌ Could not find the user in this guild.`);
         }
 
-        // Log member's permissions for debugging
+        // Check member's permissions
         console.log("Member permissions:", member.permissions.toArray());
-
-        // Check if the member executing the command has permission to kick
         if (!member.permissions.has("KICK_MEMBERS")) {
+            console.log("Member does not have KICK_MEMBERS permission.");
             return await this.Bot.send(interaction, `❌ You do not have permission to kick members!`);
         }
 
