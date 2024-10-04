@@ -1,9 +1,7 @@
 // Commands/Punishments/Unwarn.js
 
 const Command = require("../../Utils/Command.js");
-const WarningSystem = require("../../WarningSystem.js");
-
-const warningSystem = new WarningSystem(); // Reference the same instance
+const warningSystem = require("../../WarningSystem.js"); // Import the singleton instance
 
 class Unwarn extends Command {
     constructor(Bot) {
