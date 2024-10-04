@@ -23,10 +23,7 @@ class Purge extends Command {
     }
 
     async run(interaction, guild, member, args) {
-      
-
         const amount = args[0].value; // Get the amount from the command arguments
-      
 
         // Validate the amount
         if (amount < 1 || amount > 100) {
@@ -41,11 +38,15 @@ class Purge extends Command {
         // Proceed to purge messages
         try {
             const messages = await interaction.channel.messages.fetch({ limit: amount });
-            await interaction.channel.bulkDelete(messages);
             
-            return await this.Bot.send(interaction, `✅ Successfully deleted ${messages.size} messages.`);
+            // Filter out messages that are older than 14 days
+            const deletableMessages = messages.filter(msg => (Date.now() - msg.createdTimestamp) < 1209600000);
+            
+            const deletedMessages = await interaction.channel.bulkDelete(deletableMessages);
+
+            return await this.Bot.send(interaction, `✅ Successfully deleted ${deletedMessages.size} messages.`);
         } catch (error) {
-           
+            console.error("Error deleting messages:", error);
             return await this.Bot.send(interaction, `❌ An error occurred while trying to delete messages.`);
         }
     }
