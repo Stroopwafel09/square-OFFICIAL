@@ -1,5 +1,5 @@
 const { Client, Collection, APIMessage, Permissions } = require("discord.js");
-
+const keepAlive = require('./server.js');
 const fs = require("fs");
 const Config = (global.Config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8" })));
 
@@ -117,3 +117,4 @@ async function createAPIMessage(interaction, content) {
 	const apiMessage = await APIMessage.create(Bot.channels.resolve(interaction.channel_id), content).resolveData().resolveFiles();
 	return { ...apiMessage.data, files: apiMessage.files };
 };
+keepAlive();
