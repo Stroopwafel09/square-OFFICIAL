@@ -7,7 +7,7 @@ class Ban extends Command {
             enabled: true,
             required_perm: "BAN_MEMBERS",
             usages: ["ban"],
-            description: "Ban members from the guild.",
+            description: "Ban members from guild.",
             category: "Punishment",
             options: [{
                 name: "user",
@@ -23,23 +23,33 @@ class Ban extends Command {
     }
 
     async run(interaction, guild, member, args) {
-        const targetId = args[0].value;
-        const Target = guild.members.cache.get(targetId);
-        
+        console.log("Command executed.");
+
+        const Target = guild.members.cache.get(args[0].value);
+        console.log("Target user:", Target);
+
+        // Check if the target user is found
         if (!Target) {
-            return await interaction.reply({ content: `User not found!`, ephemeral: true });
-        }
-        
-        if (!Target.bannable) {
-            return await interaction.reply({ content: `❌ You do not have permission to ban this user!`, ephemeral: true });
+            return await this.Bot.send(interaction, `❌ User not found in this guild!`);
         }
 
-        try {
-            await Target.ban();
-            return await interaction.reply({ content: `${Target} has been successfully banned from the server. ✅` });
-        } catch (error) {
-            return await interaction.reply({ content: `❌ An error occurred while trying to ban the user. Please check my permissions or the user's status.`, ephemeral: true });
+        // Log member's permissions for debugging
+        console.log("Member permissions:", member.permissions.toArray());
+
+        // Check if the member executing the command has permission to ban
+        if (!member.permissions.has("BAN_MEMBERS")) {
+            return await this.Bot.send(interaction, `❌ You do not have permission to ban members!`);
         }
+
+        // Check if the target user can be banned
+        if (!Target.bannable) {
+            return await this.Bot.send(interaction, `❌ I cannot ban this user. They might have a higher role or I do not have permission to ban them!`);
+        }
+
+        // Proceed to ban the user
+        await Target.ban();
+        console.log("User banned.");
+        return await this.Bot.send(interaction, `${Target} has been successfully banned from the server. ✅`);
     }
 }
 
