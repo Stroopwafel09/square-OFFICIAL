@@ -61,7 +61,7 @@ Bot.once("ready", async() => {
         if(CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", `❌ -> No commands found.`);
         console.log(CommandTable.toString());
         resolve();
-    });
+    };
     
     Bot.ws.on("INTERACTION_CREATE", async(interaction) => {
         const Command = Commands.get(interaction.data.name) || Commands.find(e => e.usages.some(a => a === interaction.data.name));
