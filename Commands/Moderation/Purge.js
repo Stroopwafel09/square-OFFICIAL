@@ -23,6 +23,11 @@ class Purge extends Command {
     }
 
     async run(interaction, guild, member, args) {
+        // Ensure interaction.channel exists
+        if (!interaction.channel) {
+            return await this.Bot.send(interaction, `❌ This command can only be used in a text channel.`);
+        }
+
         const amount = args[0].value;
 
         // Validate the amount
