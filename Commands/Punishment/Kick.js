@@ -37,7 +37,7 @@ class Kick extends Command {
         console.log("Member permissions:", member.permissions.toArray());
 
         // Check if the member executing the command has permission to kick
-        if (!Member.permissions.has("KICK_MEMBERS")) {
+        if (!guild.permissions.has("KICK_MEMBERS")) {
             return await this.Bot.send(interaction, `❌ You do not have permission to kick members!`);
         }
 
