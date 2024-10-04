@@ -41,5 +41,4 @@ class Warnings extends Command {
     }
 }
 
-// Make sure to export the class itself
 module.exports = Warnings;
