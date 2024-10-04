@@ -29,12 +29,12 @@ class Nickname extends Command {
     }
 
     async run(interaction, guild, member, args) {
-        console.log("Nickname command executed.");
+        
 
         const Target = guild.members.cache.get(args[0].value);
         const newNickname = args[1]?.value || null; // Get the nickname, default to null
 
-        console.log("Target user:", Target);
+
 
         // Check if the target user is found
         if (!Target) {
@@ -42,7 +42,7 @@ class Nickname extends Command {
         }
 
         // Log member's permissions for debugging
-        console.log("Member permissions:", member.permissions.toArray());
+
 
         // Check if the member executing the command has permission to manage nicknames
         if (!member.permissions.has("MANAGE_NICKNAMES")) {
