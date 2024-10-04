@@ -23,7 +23,7 @@ class Kick extends Command {
     }
 
     async run(interaction, guild, member, args) {
-        console.log("Command executed.");
+        console.log("Command executed by:", member.user.tag);
 
         // 'member' is the user executing the command
         const Target = guild.members.cache.get(args[0].value);
@@ -48,9 +48,14 @@ class Kick extends Command {
         }
 
         // Proceed to kick the user
-        await Target.kick();
-        console.log("User kicked.");
-        return await this.Bot.send(interaction, `${Target} has been successfully kicked from the server. ✅`);
+        try {
+            await Target.kick();
+            console.log("User kicked.");
+            return await this.Bot.send(interaction, `${Target} has been successfully kicked from the server. ✅`);
+        } catch (error) {
+            console.error("Error kicking user:", error);
+            return await this.Bot.send(interaction, `❌ An error occurred while trying to kick the user.`);
+        }
     }
 }
 
