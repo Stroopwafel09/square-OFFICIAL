@@ -23,15 +23,21 @@ class Kick extends Command {
     }
 
     async run(interaction, guild, member, args) {
+        console.log("Command executed.");
+
         const Target = guild.members.cache.get(args[0].value);
+        console.log("Target user:", Target);
 
         // Check if the target user is found
         if (!Target) {
             return await this.Bot.send(interaction, '❌ User not found in this guild!');
         }
 
+        // Log member's permissions for debugging
+        console.log("Member permissions:", member.permissions.toArray());
+
         // Check if the member executing the command has permission to kick
-        if (!member.permissions.has([PermissionsBitField.Flags.KickMembers]) {
+        if (!member.permissions.has("KICK_MEMBERS")) {
             return await this.Bot.send(interaction, '❌ You do not have permission to kick members!');
         }
 
@@ -42,6 +48,7 @@ class Kick extends Command {
 
         // Proceed to kick the user
         await Target.kick();
+        console.log("User kicked.");
         return await this.Bot.send(interaction, `${Target} has been successfully kicked from the server. ✅`);
     }
 }
