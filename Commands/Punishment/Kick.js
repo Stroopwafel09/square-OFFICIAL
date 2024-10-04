@@ -31,7 +31,7 @@ class Kick extends Command {
         }
 
         // Check if the member executing the command has permission to kick
-        if (!member.permissions.has("KICK_MEMBERS")) {
+        if (!member.permissions.has([PermissionsBitField.Flags.KickMembers])) {
             return await this.Bot.send(interaction, '❌ You do not have permission to kick members!');
         }
 
