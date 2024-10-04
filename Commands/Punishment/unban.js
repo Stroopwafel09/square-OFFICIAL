@@ -23,23 +23,23 @@ class Unban extends Command {
     }
 
     async run(interaction, guild, member, args) {
-        console.log("Command executed.");
+
 
         const userId = args[0].value; // Verwacht een string voor de gebruikers-ID
-        console.log("User ID to unban:", userId);
+    
 
         // Check of de uitvoerende lid de permissie heeft om te bannen
-        console.log("Member permissions:", member.permissions.toArray());
+   
         if (!member.permissions.has("BAN_MEMBERS")) {
             return await this.Bot.send(interaction, `❌ You do not have permission to unban members!`);
         }
 
         try {
             await guild.members.unban(userId);
-            console.log("User unbanned.");
+            
             return await this.Bot.send(interaction, `User with ID ${userId} has been successfully unbanned from the server. ✅`);
         } catch (error) {
-            console.error("Error unbanning user:", error);
+           
             return await this.Bot.send(interaction, `❌ An error occurred while trying to unban the user. They might not be banned or the ID is incorrect.`);
         }
     }
