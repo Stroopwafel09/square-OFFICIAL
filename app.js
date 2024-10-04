@@ -1,11 +1,15 @@
 const { Client, Collection, APIMessage, Permissions } = require("discord.js");
-const keepAlive = require('./server.js');
+
+
 const fs = require("fs");
 const Config = (global.Config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8" })));
+
 const Bot = (global.Bot = new Client({ fetchAllMembers: true, disableMentions: "none" }));
 const Commands = (global.Commands = new Collection());
+
 const AsciiTable = require("ascii-table");
 const CommandTable = new AsciiTable("List of Commands");
+
 const fetch = require("node-fetch").default
 
 Bot.once("ready", async() => {
@@ -13,7 +17,7 @@ Bot.once("ready", async() => {
         
         const commandsList = await Bot.api.applications(Bot.user.id).commands.get();
 
- const Dirs = fs.readdirSync("./Commands");
+        const Dirs = fs.readdirSync("./Commands");
         for(const commandDir of Dirs) {
             const Files = fs.readdirSync("./Commands/" + commandDir).filter(e => e.endsWith(".js")); 
             for(const commandFile of Files) {
@@ -25,7 +29,7 @@ Bot.once("ready", async() => {
                     reject("ERROR! Cannot load \'" + commandFile + "\' command file: Command options is not set!");
                 }
 
-                 CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
+                CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
                 Commands.set(Command.usages[0], Command)
                 Command.usages.forEach(usage => {
                     if(commandsList.some(cmd => cmd.name === usage)) {
@@ -49,7 +53,9 @@ Bot.once("ready", async() => {
                 
                 Command.load();
             }
-              commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(cmd => {
+        }
+
+        commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(cmd => {
             fetch("https://discord.com/api/v8/applications/" + Bot.user.id + "/commands/" + cmd.id, {
                 method: "DELETE",
                 headers: {
@@ -58,10 +64,12 @@ Bot.once("ready", async() => {
                 }
             });
         });
+
         if(CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", `❌ -> No commands found.`);
         console.log(CommandTable.toString());
         resolve();
-    };
+
+    });
     
     Bot.ws.on("INTERACTION_CREATE", async(interaction) => {
         const Command = Commands.get(interaction.data.name) || Commands.find(e => e.usages.some(a => a === interaction.data.name));
@@ -73,25 +81,31 @@ Bot.once("ready", async() => {
     });
     
     Bot.user.setPresence({
-        status: "online",
+        status: "dnd",
         activity: {
             name: Config.DEFAULTS.ACTIVITY_TEXT,
             type: "WATCHING"
-              });
+        }
+    });
+
     console.log(`[BOT] \'${Bot.user.username}\' client has been activated!`);
 
-         });
-Bot.login(process.env.TOKEN).catch(err => {
+});
+
+Bot.login(Config.DEFAULTS.TOKEN).catch(err => {
     console.error("ERROR! An occured error while connectiong to client: " + err.message);
     Bot.destroy();
 });
+
 const AllPermissions = new Permissions(Permissions.ALL).toArray();
 Bot.hasPermission = function(member, permission) {
     if(!AllPermissions.includes(permission.toUpperCase())) return true;
     const Perms = new Permissions(Number(member.permissions));
     if(Perms.has(permission.toUpperCase())) return true;
     return false;
-    Bot.send = async function(interaction, content) {
+}
+
+Bot.send = async function(interaction, content) {
 	return Bot.api.interactions(interaction.id, interaction.token).callback.post({
 		data: {
 			type: 4,
@@ -99,8 +113,17 @@ Bot.hasPermission = function(member, permission) {
 		}
 	});
 };
+
 async function createAPIMessage(interaction, content) {
 	const apiMessage = await APIMessage.create(Bot.channels.resolve(interaction.channel_id), content).resolveData().resolveFiles();
 	return { ...apiMessage.data, files: apiMessage.files };
 };
+const { Client } = require("discord.js");
+const keepAlive = require('./server.js');
+ 
+const client = new Client({
+  disableEveryone: true
+});
+ 
 keepAlive();
+client.login(process.env.TOKEN);
