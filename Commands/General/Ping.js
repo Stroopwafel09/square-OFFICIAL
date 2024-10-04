@@ -7,7 +7,7 @@ class Ping extends Command {
             enabled: true,
             required_perm: null, // No permissions required for ping
             usages: ["ping"],
-            description: "Check the bot's latency.",
+            description: "Check the bot's latency and API response time.",
             category: "Utility",
             options: []
         });
@@ -20,12 +20,17 @@ class Ping extends Command {
     async run(interaction, guild, member, args) {
         console.log("Ping command executed.");
 
-        // Calculate latency
+        // Send initial message
         const sentMessage = await this.Bot.send(interaction, `🏓 Pong! Calculating latency...`);
+
+        // Calculate latency
         const latency = Date.now() - interaction.createdTimestamp;
 
-        // Send the response with the latency
-        return await sentMessage.edit(`🏓 Pong! Latency: ${latency}ms`);
+        // Calculate API latency
+        const apiLatency = Math.round(this.Bot.ws.ping); // WebSocket ping
+
+        // Send the response with the latency details
+        return await sentMessage.edit(`🏓 Pong! Latency: ${latency}ms | API Latency: ${apiLatency}ms`);
     }
 }
 
