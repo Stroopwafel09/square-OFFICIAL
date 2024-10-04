@@ -23,10 +23,10 @@ class Purge extends Command {
     }
 
     async run(interaction, guild, member, args) {
-        console.log("Purge command executed.");
+      
 
         const amount = args[0].value; // Get the amount from the command arguments
-        console.log("Amount to purge:", amount);
+      
 
         // Validate the amount
         if (amount < 1 || amount > 100) {
@@ -42,10 +42,10 @@ class Purge extends Command {
         try {
             const messages = await interaction.channel.messages.fetch({ limit: amount });
             await interaction.channel.bulkDelete(messages);
-            console.log(`${messages.size} messages deleted.`);
+            
             return await this.Bot.send(interaction, `✅ Successfully deleted ${messages.size} messages.`);
         } catch (error) {
-            console.error("Error purging messages:", error);
+           
             return await this.Bot.send(interaction, `❌ An error occurred while trying to delete messages.`);
         }
     }
