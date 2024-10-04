@@ -24,8 +24,9 @@ class Info extends Command {
         const botInfo = {
             name: this.Bot.user.username,
             id: this.Bot.user.id,
-            owner: "Your Owner Name", // Replace with actual owner name
-            ownerId: "Owner ID", // Replace with actual owner ID
+            Server: "https://discord.gg/Kk4jcNYSS2",
+            owner: "BramPower09", // Replace with actual owner name
+            ownerId: "573891601781489667", // Replace with actual owner ID
             createdAt: this.Bot.user.createdAt.toDateString(),
             guildCount: this.Bot.guilds.cache.size
         };
@@ -34,6 +35,7 @@ class Info extends Command {
         const infoMessage = `
 **Bot Name:** ${botInfo.name}
 **Bot ID:** ${botInfo.id}
+**Bot Server:** ${botInfo.Server}
 **Owner:** ${botInfo.owner} (ID: ${botInfo.ownerId})
 **Created On:** ${botInfo.createdAt}
 **Servers:** ${botInfo.guildCount}
