@@ -5,11 +5,11 @@ class WarningSystem {
         this.warnings = new Map(); // Store warnings in a Map
     }
 
-    addWarning(userId, warning) {
+    addWarning(userId, reason) {
         if (!this.warnings.has(userId)) {
             this.warnings.set(userId, []);
         }
-        this.warnings.get(userId).push(warning);
+        this.warnings.get(userId).push(reason);
     }
 
     getWarnings(userId) {
