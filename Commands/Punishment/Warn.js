@@ -1,7 +1,7 @@
 // Commands/Punishments/Warn.js
 
 const Command = require("../../Utils/Command.js");
-const WarningSystem = require("../../WarningSystem.js"); // Correct path
+const WarningSystem = require("../../WarningSystem.js");
 
 const warningSystem = new WarningSystem(); // Create an instance
 
@@ -45,4 +45,5 @@ class Warn extends Command {
     }
 }
 
-module.exports = { Warn, warningSystem };
+// Make sure to export the class itself
+module.exports = Warn;
