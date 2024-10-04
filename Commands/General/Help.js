@@ -8,7 +8,7 @@ class Help extends Command {
         super(Bot, {
             enabled: true,
             required_perm: null, // No permissions required for help
-            usages: ["help", "?"],
+            usages: ["help"],
             description: "Displays a list of all commands and their usage.",
             category: "Utility",
             options: []
