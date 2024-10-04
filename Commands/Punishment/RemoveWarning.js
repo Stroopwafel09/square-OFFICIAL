@@ -47,5 +47,4 @@ class RemoveWarning extends Command {
     }
 }
 
-// Make sure to export the class itself
 module.exports = RemoveWarning;
