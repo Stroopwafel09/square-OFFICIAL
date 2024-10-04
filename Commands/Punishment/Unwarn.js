@@ -1,14 +1,16 @@
-// Commands/Punishments/RemoveWarning.js
+// Commands/Punishments/Unwarn.js
 
 const Command = require("../../Utils/Command.js");
-const { warningSystem } = require("./Warn");
+const WarningSystem = require("../../WarningSystem.js");
 
-class RemoveWarning extends Command {
+const warningSystem = new WarningSystem(); // Reference the same instance
+
+class Unwarn extends Command {
     constructor(Bot) {
         super(Bot, {
             enabled: true,
             required_perm: "MANAGE_MESSAGES",
-            usages: ["removewarn"],
+            usages: ["unwarn"],
             description: "Remove a warning from a user.",
             category: "Moderation",
             options: [{
@@ -47,4 +49,4 @@ class RemoveWarning extends Command {
     }
 }
 
-module.exports = RemoveWarning;
+module.exports = Unwarn;
