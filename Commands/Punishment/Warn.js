@@ -1,9 +1,7 @@
 // Commands/Punishments/Warn.js
 
 const Command = require("../../Utils/Command.js");
-const WarningSystem = require("../../WarningSystem.js");
-
-const warningSystem = new WarningSystem(); // Create an instance
+const warningSystem = require("../../WarningSystem.js"); // Import the singleton instance
 
 class Warn extends Command {
     constructor(Bot) {
@@ -40,7 +38,7 @@ class Warn extends Command {
             return await this.Bot.send(interaction, `❌ User not found in this guild!`);
         }
 
-        warningSystem.addWarning(Target.id, reason);
+        warningSystem.addWarning(Target.id, reason); // Use the shared instance
         return await this.Bot.send(interaction, `✅ ${Target} has been warned for: ${reason}`);
     }
 }
