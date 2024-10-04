@@ -1,7 +1,7 @@
-// commands/Warnings.js
+// Commands/Punishments/Warnings.js
 
 const Command = require("../../Utils/Command.js");
-const { warningSystem } = require("./Warn");
+const { warningSystem } = require("./Warn"); // Correctly pointing to Warn.js
 
 class Warnings extends Command {
     constructor(Bot) {
