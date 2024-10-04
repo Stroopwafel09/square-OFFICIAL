@@ -28,4 +28,4 @@ class WarningSystem {
     }
 }
 
-module.exports = WarningSystem;
+module.exports = new WarningSystem(); // Export a singleton instance
