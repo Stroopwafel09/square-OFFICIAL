@@ -23,10 +23,10 @@ class Ban extends Command {
     }
 
     async run(interaction, guild, member, args) {
-        console.log("Command executed.");
+ 
 
         const Target = guild.members.cache.get(args[0].value);
-        console.log("Target user:", Target);
+        
 
         // Check if the target user is found
         if (!Target) {
@@ -34,7 +34,7 @@ class Ban extends Command {
         }
 
         // Log member's permissions for debugging
-        console.log("Member permissions:", member.permissions.toArray());
+       
 
         // Check if the member executing the command has permission to ban
         if (!member.permissions.has("BAN_MEMBERS")) {
@@ -48,7 +48,7 @@ class Ban extends Command {
 
         // Proceed to ban the user
         await Target.ban();
-        console.log("User banned.");
+        
         return await this.Bot.send(interaction, `${Target} has been successfully banned from the server. ✅`);
     }
 }
