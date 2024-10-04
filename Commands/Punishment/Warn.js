@@ -1,7 +1,7 @@
-// commands/Warn.js
+// Commands/Punishments/Warn.js
 
 const Command = require("../../Utils/Command.js");
-const WarningSystem = require("../WarningSystem.js");
+const WarningSystem = require("../../WarningSystem.js"); // Correct path
 
 const warningSystem = new WarningSystem(); // Create an instance
 
