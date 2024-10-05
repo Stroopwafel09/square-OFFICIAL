@@ -23,8 +23,10 @@ class Purge extends Command {
     }
 
     async run(interaction, guild, member, args) {
-        // Ensure interaction.channel exists
-        if (!interaction.channel) {
+        // Ensure the command is used in a text channel
+        const channel = interaction.channel || interaction.guild.channels.cache.get(interaction.channelId);
+
+        if (!channel || !channel.isText()) {
             return await this.Bot.send(interaction, `❌ This command can only be used in a text channel.`);
         }
 
@@ -35,13 +37,13 @@ class Purge extends Command {
             return await this.Bot.send(interaction, `❌ You must specify an amount between 1 and 100.`);
         }
 
-        // Check if the member executing the command has permission to manage messages
+        // Check if the member has permission to manage messages
         if (!member.permissions.has("MANAGE_MESSAGES")) {
             return await this.Bot.send(interaction, `❌ You do not have permission to manage messages!`);
         }
 
         try {
-            const messages = await interaction.channel.messages.fetch({ limit: amount });
+            const messages = await channel.messages.fetch({ limit: amount });
             console.log(`Fetched ${messages.size} messages.`);
 
             // Filter out messages older than 14 days
@@ -52,7 +54,7 @@ class Purge extends Command {
                 return await this.Bot.send(interaction, `❌ No messages to delete (older than 14 days).`);
             }
 
-            const deletedMessages = await interaction.channel.bulkDelete(deletableMessages);
+            const deletedMessages = await channel.bulkDelete(deletableMessages);
             return await this.Bot.send(interaction, `✅ Successfully deleted ${deletedMessages.size} messages.`);
         } catch (error) {
             console.error("Error deleting messages:", error);
