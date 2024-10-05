@@ -26,7 +26,7 @@ class Purge extends Command {
         console.log("Command executed.");
 
         const amount = args[0].value;
-        
+
         // Validate the amount
         if (amount < 1 || amount > 100) {
             return await this.Bot.send(interaction, `❌ You must specify an amount between 1 and 100.`);
@@ -38,7 +38,9 @@ class Purge extends Command {
         }
 
         try {
-            const messages = await interaction.channel.messages.fetch({ limit: Math.min(amount + 1, 100) });
+            // Fetch the channel using the client
+            const channel = await interaction.client.channels.fetch(interaction.channelId);
+            const messages = await channel.messages.fetch({ limit: Math.min(amount + 1, 100) });
             let deletedMessages = 0;
 
             // Delete messages authored by the bot itself
