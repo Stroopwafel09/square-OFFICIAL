@@ -24,6 +24,12 @@ class Purge extends Command {
 
     async run(interaction, guild, member, args) {
         console.log("Command executed.");
+        console.log("Interaction context:", interaction); // Debugging line
+
+        // Ensure interaction is from a guild and has a valid channel
+        if (!interaction.guild || !interaction.channel) {
+            return await this.Bot.send(interaction, `❌ This command can only be used in a text channel in a server.`);
+        }
 
         const amount = args[0].value;
 
