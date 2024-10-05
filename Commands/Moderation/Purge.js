@@ -38,9 +38,8 @@ class Purge extends Command {
         }
 
         try {
-            // Fetch the channel using the Bot instance
-            const channel = await this.Bot.client.channels.fetch(interaction.channelId);
-            const messages = await channel.messages.fetch({ limit: Math.min(amount + 1, 100) });
+            // Use interaction.channel directly
+            const messages = await interaction.channel.messages.fetch({ limit: Math.min(amount + 1, 100) });
             let deletedMessages = 0;
 
             // Delete messages authored by the bot itself
