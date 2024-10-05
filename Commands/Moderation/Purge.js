@@ -23,42 +23,36 @@ class Purge extends Command {
     }
 
     async run(interaction, guild, member, args) {
-        // Ensure the command is used in a text channel
-        const channel = interaction.channel || interaction.guild.channels.cache.get(interaction.channelId);
-
-        if (!channel || !channel.isText()) {
-            return await this.Bot.send(interaction, `❌ This command can only be used in a text channel.`);
-        }
+        console.log("Command executed.");
 
         const amount = args[0].value;
-
+        
         // Validate the amount
         if (amount < 1 || amount > 100) {
             return await this.Bot.send(interaction, `❌ You must specify an amount between 1 and 100.`);
         }
 
-        // Check if the member has permission to manage messages
+        // Check if the member executing the command has permission to manage messages
         if (!member.permissions.has("MANAGE_MESSAGES")) {
             return await this.Bot.send(interaction, `❌ You do not have permission to manage messages!`);
         }
 
         try {
-            const messages = await channel.messages.fetch({ limit: amount });
-            console.log(`Fetched ${messages.size} messages.`);
+            const messages = await interaction.channel.messages.fetch({ limit: Math.min(amount + 1, 100) });
+            let deletedMessages = 0;
 
-            // Filter out messages older than 14 days
-            const deletableMessages = messages.filter(msg => (Date.now() - msg.createdTimestamp) < 1209600000);
-            console.log(`Deletable messages: ${deletableMessages.size}`);
+            // Delete messages authored by the bot itself
+            const deletableMessages = messages.filter(m => m.author.id === this.Bot.user.id);
 
-            if (deletableMessages.size === 0) {
-                return await this.Bot.send(interaction, `❌ No messages to delete (older than 14 days).`);
+            for (const msg of deletableMessages.values()) {
+                await msg.delete();
+                deletedMessages++;
             }
 
-            const deletedMessages = await channel.bulkDelete(deletableMessages);
-            return await this.Bot.send(interaction, `✅ Successfully deleted ${deletedMessages.size} messages.`);
+            return await this.Bot.send(interaction, `✅ Purged \`${deletedMessages}\` messages.`);
         } catch (error) {
-            console.error("Error deleting messages:", error);
-            return await this.Bot.send(interaction, `❌ An error occurred while trying to delete messages: ${error.message}`);
+            console.error("Error during purge:", error);
+            return await this.Bot.send(interaction, `❌ An error occurred while trying to purge messages: ${error.message}`);
         }
     }
 }
