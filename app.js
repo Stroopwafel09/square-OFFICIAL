@@ -21,8 +21,92 @@ const Bot = (global.Bot = new Client({
 const Commands = (global.Commands = new Collection());
 const CommandTable = new AsciiTable("List of Commands");
 
+// Ready event
 Bot.once("ready", async () => {
-    // Your existing ready code...
+    await new Promise(async (resolve, reject) => {
+        const commandsList = await Bot.api.applications(Bot.user.id).commands.get();
+        const Dirs = fs.readdirSync("./Commands");
+
+        for (const commandDir of Dirs) {
+            const Files = fs.readdirSync("./Commands/" + commandDir).filter(e => e.endsWith(".js"));
+            for (const commandFile of Files) {
+                const Command = new (require("./Commands/" + commandDir + "/" + commandFile))(Bot);
+
+                // Check command validity
+                if (!Command.usages || !Command.usages.length) {
+                    reject(`ERROR! Cannot load '${commandFile}' command file: Command usages not found!`);
+                }
+                if (!Command.options || !Array.isArray(Command.options)) {
+                    reject(`ERROR! Cannot load '${commandFile}' command file: Command options is not set!`);
+                }
+
+                CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
+                Commands.set(Command.usages[0], Command);
+                
+                Command.usages.forEach(usage => {
+                    if (commandsList.some(cmd => cmd.name === usage)) {
+                        Bot.api.applications(Bot.user.id).commands(commandsList.find(cmd => cmd.name === usage).id).patch({
+                            data: {
+                                name: usage,
+                                description: Command.description,
+                                options: Command.options
+                            }
+                        });
+                    } else {
+                        Bot.api.applications(Bot.user.id).commands.post({
+                            data: {
+                                name: usage,
+                                description: Command.description,
+                                options: Command.options
+                            }
+                        });
+                    }
+                });
+
+                Command.load();
+            }
+        }
+
+        // Remove commands that are no longer in use
+        commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(cmd => {
+            fetch(`https://discord.com/api/v8/applications/${Bot.user.id}/commands/${cmd.id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bot ${Bot.token}`,
+                    "Content-Type": "application/json",
+                }
+            });
+        });
+
+        if (CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", "❌ -> No commands found.");
+        console.log(CommandTable.toString());
+        resolve();
+    });
+
+    // Handle interactions
+    Bot.ws.on("INTERACTION_CREATE", async (interaction) => {
+        const Command = Commands.get(interaction.data.name) || Commands.find(e => e.usages.some(a => a === interaction.data.name));
+        if (!Command || !Command.enabled) return;
+
+        if (Command.required_perm && !Bot.hasPermission(interaction.member, Command.required_perm)) {
+            return await Bot.send(interaction, `You must have a \`${Command.required_perm.toUpperCase()}\` permission to use this command!`);
+        }
+        
+        const Guild = Bot.guilds.cache.get(interaction.guild_id);
+        const Member = Guild.members.cache.get(interaction.member.user.id);
+        return Command.run(interaction, Guild, Member, interaction.data.options);
+    });
+
+    // Set bot presence
+    Bot.user.setPresence({
+        status: "dnd",
+        activity: {
+            name: Config.DEFAULTS.ACTIVITY_TEXT,
+            type: "WATCHING"
+        }
+    });
+
+    console.log(`[BOT] '${Bot.user.username}' client has been activated!`);
 });
 
 // Login to Discord
@@ -32,11 +116,11 @@ Bot.login(process.env.TOKEN).catch(err => {
 });
 
 // Permissions helper
-const AllPermissions = PermissionsBitField.Flags; // Use Flags for permissions
 Bot.hasPermission = function(member, permission) {
-    if (!AllPermissions[permission.toUpperCase()]) return true; // Check if the permission is valid
-    const Perms = new PermissionsBitField(Number(member.permissions));
-    return Perms.has(permission.toUpperCase());
+    const permissions = PermissionsBitField.Flags; // Use Flags for permissions
+    if (!permissions[permission.toUpperCase()]) return true; // Check if the permission is valid
+    const memberPermissions = new PermissionsBitField(member.permissions).toArray();
+    return memberPermissions.includes(permission.toUpperCase());
 };
 
 // Send a message function
