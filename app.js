@@ -1,4 +1,4 @@
-const { Client, Collection, APIMessage, PermissionsBitField, GatewayIntentBits } = require("discord.js");
+const { Client, Collection, APIMessage, PermissionsBitField, GatewayIntentBits, REST, Routes } = require("discord.js");
 const fs = require("fs");
 const Config = (global.Config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8" })));
 
@@ -19,68 +19,73 @@ const AsciiTable = require("ascii-table");
 const CommandTable = new AsciiTable("List of Commands");
 const fetch = require("node-fetch").default;
 
+// Create a new REST instance
+const rest = new REST({ version: '9' }).setToken(process.env.TOKEN);
+
 Bot.once("ready", async () => {
     await new Promise(async (resolve, reject) => {
-        const commandsList = await Bot.api.applications(Bot.user.id).commands.get();
-        const Dirs = fs.readdirSync("./Commands");
+        try {
+            // Fetch existing commands from Discord
+            const commandsList = await rest.get(Routes.applicationCommands(Bot.user.id));
 
-        for (const commandDir of Dirs) {
-            const Files = fs.readdirSync("./Commands/" + commandDir).filter(e => e.endsWith(".js"));
-            for (const commandFile of Files) {
-                const Command = new (require("./Commands/" + commandDir + "/" + commandFile))(Bot);
-                if (!Command.usages || !Command.usages.length) {
-                    reject("ERROR! Cannot load \'" + commandFile + "\' command file: Command usages not found!");
-                }
-                if (!Command.options || !Array.isArray(Command.options)) {
-                    reject("ERROR! Cannot load \'" + commandFile + "\' command file: Command options is not set!");
-                }
-
-                CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
-                Commands.set(Command.usages[0], Command);
-                Command.usages.forEach(usage => {
-                    if (commandsList.some(cmd => cmd.name === usage)) {
-                        Bot.api.applications(Bot.user.id).commands(commandsList.find(cmd => cmd.name === usage).id).patch({
-                            data: {
-                                name: usage,
-                                description: Command.description,
-                                options: Command.options
-                            }
-                        });
-                    } else {
-                        Bot.api.applications(Bot.user.id).commands.post({
-                            data: {
-                                name: usage,
-                                description: Command.description,
-                                options: Command.options
-                            }
-                        });
+            const Dirs = fs.readdirSync("./Commands");
+            for (const commandDir of Dirs) {
+                const Files = fs.readdirSync("./Commands/" + commandDir).filter(e => e.endsWith(".js"));
+                for (const commandFile of Files) {
+                    const Command = new (require("./Commands/" + commandDir + "/" + commandFile))(Bot);
+                    if (!Command.usages || !Command.usages.length) {
+                        reject("ERROR! Cannot load \'" + commandFile + "\' command file: Command usages not found!");
                     }
-                });
+                    if (!Command.options || !Array.isArray(Command.options)) {
+                        reject("ERROR! Cannot load \'" + commandFile + "\' command file: Command options is not set!");
+                    }
 
-                Command.load();
-            }
-        }
+                    CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
+                    Commands.set(Command.usages[0], Command);
+                    Command.usages.forEach(async (usage) => {
+                        const existingCommand = commandsList.find(cmd => cmd.name === usage);
+                        if (existingCommand) {
+                            await rest.patch(Routes.applicationCommand(Bot.user.id, existingCommand.id), {
+                                body: {
+                                    name: usage,
+                                    description: Command.description,
+                                    options: Command.options
+                                },
+                            });
+                        } else {
+                            await rest.post(Routes.applicationCommands(Bot.user.id), {
+                                body: {
+                                    name: usage,
+                                    description: Command.description,
+                                    options: Command.options
+                                },
+                            });
+                        }
+                    });
 
-        commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(cmd => {
-            fetch("https://discord.com/api/v8/applications/" + Bot.user.id + "/commands/" + cmd.id, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bot ${Bot.token}`,
-                    "Content-Type": "application/json",
+                    Command.load();
                 }
-            });
-        });
+            }
 
-        if (CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", `❌ -> No commands found.`);
-        console.log(CommandTable.toString());
-        resolve();
+            // Clean up commands that are not in the Commands collection
+            commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(async (cmd) => {
+                await rest.delete(Routes.applicationCommand(Bot.user.id, cmd.id));
+            });
+
+            if (CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", `❌ -> No commands found.`);
+            console.log(CommandTable.toString());
+            resolve();
+        } catch (error) {
+            console.error("Error fetching commands:", error);
+            reject(error);
+        }
     });
 
     Bot.ws.on("INTERACTION_CREATE", async (interaction) => {
         const Command = Commands.get(interaction.data.name) || Commands.find(e => e.usages.some(a => a === interaction.data.name));
         if (!Command || (!Command.enabled || Command.enabled != true)) return;
         if (Command.required_perm != 0 && Command.required_perm.length && !Bot.hasPermission(interaction.member, Command.required_perm)) {
-            return await Bot.say(interaction, `You must have a \`${Command.required_perm.toUpperCase()}\` permission to use this command!`);
+            return await Bot.send(interaction, `You must have a \`${Command.required_perm.toUpperCase()}\` permission to use this command!`);
         }
         const Guild = Bot.guilds.cache.get(interaction.guild_id);
         const Member = Guild.members.cache.get(interaction.member.user.id); // Use cache to get member
