@@ -1,7 +1,6 @@
 const Command = require("../../Utils/Command.js");
 
 class Mute extends Command {
-    
     constructor(Bot) {
         super(Bot, {
             enabled: true,
@@ -40,10 +39,22 @@ class Mute extends Command {
             return await this.Bot.send(interaction, `❌ You do not have permission to mute members!`);
         }
 
-        // Ensure the bot can manage roles
         const muteRole = guild.roles.cache.find(role => role.name === "Muted");
-        if (!muteRole || !Target.manageable) {
-            return await this.Bot.send(interaction, `❌ I cannot mute this user. They might have a higher role or I do not have permission!`);
+        if (!muteRole) {
+            return await this.Bot.send(interaction, `❌ The "Muted" role does not exist.`);
+        }
+
+        // Log role positions for debugging
+        console.log(`Bot's Highest Role Position: ${member.guild.me.roles.highest.position}`);
+        console.log(`Target's Highest Role Position: ${Target.roles.highest.position}`);
+
+        if (member.guild.me.roles.highest.position <= Target.roles.highest.position) {
+            return await this.Bot.send(interaction, `❌ I cannot mute this user. They might have a higher role than me!`);
+        }
+
+        // Check if the bot can manage the target user
+        if (!Target.manageable) {
+            return await this.Bot.send(interaction, `❌ I cannot manage this user. They might have a higher role or I do not have permission!`);
         }
 
         try {
