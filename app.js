@@ -1,4 +1,4 @@
-const { Client, Collection, APIMessage, Permissions, GatewayIntentBits } = require("discord.js");
+const { Client, Collection, APIMessage, Permissions} = require("discord.js");
 
 
 const fs = require("fs");
