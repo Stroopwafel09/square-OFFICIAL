@@ -17,6 +17,7 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
+	 disableEveryone: true,    
     ],
 });
 Bot.once("ready", async() => {
@@ -127,9 +128,7 @@ async function createAPIMessage(interaction, content) {
 };
 const keepAlive = require('./server.js');
  
-const client = new Client({
-  disableEveryone: true
-});
+
  
 keepAlive();
 client.login(process.env.TOKEN);
