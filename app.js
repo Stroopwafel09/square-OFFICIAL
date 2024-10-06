@@ -1,112 +1,93 @@
-const { Client, Collection, APIMessage, GatewayIntentBits, PermissionsBitField, REST } = require("discord.js");
-const { Routes } = require("discord-api-types/v9"); // Import the correct routes
-const fs = require("fs");
-const fetch = require("node-fetch").default;
-const AsciiTable = require("ascii-table");
+const { Client, Collection, APIMessage, Permissions, GatewayIntentBits } = require("discord.js");
 
-// Load configuration
+
+const fs = require("fs");
 const Config = (global.Config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8" })));
 
-// Create a new client instance with required intents
-const Bot = (global.Bot = new Client({
+const Bot = (global.Bot = new Client({ fetchAllMembers: true, disableMentions: "none" }));
+const Commands = (global.Commands = new Collection());
+
+const AsciiTable = require("ascii-table");
+const CommandTable = new AsciiTable("List of Commands");
+
+const fetch = require("node-fetch").default
+const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
+  
     ],
-    fetchAllMembers: true,
-    disableMentions: "none",
-}));
+});
+Bot.once("ready", async() => {
+    await new Promise(async function(resolve, reject) {
+        
+        const commandsList = await Bot.api.applications(Bot.user.id).commands.get();
 
-const Commands = (global.Commands = new Collection());
-const CommandTable = new AsciiTable("List of Commands");
-
-// Create a REST instance
-const rest = new REST({ version: '9' }).setToken(process.env.TOKEN);
-
-// Ready event
-Bot.once("ready", async () => {
-    await new Promise(async (resolve, reject) => {
-        try {
-            const commandsList = await rest.get(Routes.applicationCommands(Bot.user.id)); // Use the REST instance to fetch commands
-            const Dirs = fs.readdirSync("./Commands");
-
-            for (const commandDir of Dirs) {
-                const Files = fs.readdirSync("./Commands/" + commandDir).filter(e => e.endsWith(".js"));
-                for (const commandFile of Files) {
-                    const Command = new (require("./Commands/" + commandDir + "/" + commandFile))(Bot);
-
-                    // Check command validity
-                    if (!Command.usages || !Command.usages.length) {
-                        reject(`ERROR! Cannot load '${commandFile}' command file: Command usages not found!`);
-                    }
-                    if (!Command.options || !Array.isArray(Command.options)) {
-                        reject(`ERROR! Cannot load '${commandFile}' command file: Command options is not set!`);
-                    }
-
-                    CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
-                    Commands.set(Command.usages[0], Command);
-                    
-                    Command.usages.forEach(usage => {
-                        if (commandsList.some(cmd => cmd.name === usage)) {
-                            rest.patch(Routes.applicationCommand(Bot.user.id, commandsList.find(cmd => cmd.name === usage).id), {
-                                body: {
-                                    name: usage,
-                                    description: Command.description,
-                                    options: Command.options
-                                }
-                            });
-                        } else {
-                            rest.post(Routes.applicationCommands(Bot.user.id), {
-                                body: {
-                                    name: usage,
-                                    description: Command.description,
-                                    options: Command.options
-                                }
-                            });
-                        }
-                    });
-
-                    Command.load();
+        const Dirs = fs.readdirSync("./Commands");
+        for(const commandDir of Dirs) {
+            const Files = fs.readdirSync("./Commands/" + commandDir).filter(e => e.endsWith(".js")); 
+            for(const commandFile of Files) {
+                const Command = new (require("./Commands/" + commandDir + "/" + commandFile))(Bot);
+                if(!Command.usages || !Command.usages.length) { 
+                    reject("ERROR! Cannot load \'" + commandFile + "\' command file: Command usages not found!");
                 }
-            }
+                if(!Command.options || !Array.isArray(Command.options)) {
+                    reject("ERROR! Cannot load \'" + commandFile + "\' command file: Command options is not set!");
+                }
 
-            // Remove commands that are no longer in use
-            commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(cmd => {
-                fetch(`https://discord.com/api/v8/applications/${Bot.user.id}/commands/${cmd.id}`, {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bot ${Bot.token}`,
-                        "Content-Type": "application/json",
+                CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
+                Commands.set(Command.usages[0], Command)
+                Command.usages.forEach(usage => {
+                    if(commandsList.some(cmd => cmd.name === usage)) {
+                        Bot.api.applications(Bot.user.id).commands(commandsList.find(cmd => cmd.name === usage).id).patch({
+                            data: {
+                                name: usage,
+                                description: Command.description,
+                                options: Command.options
+                            }
+                        });
+                    } else {
+                        Bot.api.applications(Bot.user.id).commands.post({
+                            data: {
+                                name: usage,
+                                description: Command.description,
+                                options: Command.options
+                            }
+                        });
                     }
                 });
+                
+                Command.load();
+            }
+        }
+
+        commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(cmd => {
+            fetch("https://discord.com/api/v8/applications/" + Bot.user.id + "/commands/" + cmd.id, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bot ${Bot.token}`,
+                    "Content-Type": "application/json",
+                }
             });
+        });
 
-            if (CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", "❌ -> No commands found.");
-            console.log(CommandTable.toString());
-            resolve();
-        } catch (error) {
-            console.error("Failed to load commands:", error);
-            reject(error);
-        }
+        if(CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", `❌ -> No commands found.`);
+        console.log(CommandTable.toString());
+        resolve();
+
     });
-
-    // Handle interactions
-    Bot.ws.on("INTERACTION_CREATE", async (interaction) => {
+    
+    Bot.ws.on("INTERACTION_CREATE", async(interaction) => {
         const Command = Commands.get(interaction.data.name) || Commands.find(e => e.usages.some(a => a === interaction.data.name));
-        if (!Command || !Command.enabled) return;
-
-        if (Command.required_perm && !Bot.hasPermission(interaction.member, Command.required_perm)) {
-            return await Bot.send(interaction, `You must have a \`${Command.required_perm.toUpperCase()}\` permission to use this command!`);
-        }
-        
+        if(!Command || (!Command.enabled || Command.enabled != true)) return;
+        if(Command.required_perm != 0 && Command.required_perm.length && !Bot.hasPermission(interaction.member, Command.required_perm)) return await Bot.say(interaction, `You must have a \`${Command.required_perm.toUpperCase()}\` permission to use this command!`)
         const Guild = Bot.guilds.cache.get(interaction.guild_id);
-        const Member = Guild.members.cache.get(interaction.member.user.id);
+        const Member = Guild.member(interaction.member.user.id);
         return Command.run(interaction, Guild, Member, interaction.data.options);
     });
-
-    // Set bot presence
+    
     Bot.user.setPresence({
         status: "dnd",
         activity: {
@@ -115,39 +96,39 @@ Bot.once("ready", async () => {
         }
     });
 
-    console.log(`[BOT] '${Bot.user.username}' client has been activated!`);
+    console.log(`[BOT] \'${Bot.user.username}\' client has been activated!`);
+
 });
 
-// Login to Discord
 Bot.login(process.env.TOKEN).catch(err => {
-    console.error("ERROR! An error occurred while connecting to the client: " + err.message);
+    console.error("ERROR! An occured error while connectiong to client: " + err.message);
     Bot.destroy();
 });
 
-// Permissions helper
+const AllPermissions = new Permissions(Permissions.ALL).toArray();
 Bot.hasPermission = function(member, permission) {
-    const permissions = PermissionsBitField.Flags; // Use Flags for permissions
-    if (!permissions[permission.toUpperCase()]) return true; // Check if the permission is valid
-    const memberPermissions = new PermissionsBitField(member.permissions).toArray();
-    return memberPermissions.includes(permission.toUpperCase());
-};
-
-// Send a message function
-Bot.send = async function(interaction, content) {
-    return Bot.api.interactions(interaction.id, interaction.token).callback.post({
-        data: {
-            type: 4,
-            data: await createAPIMessage(interaction, content)
-        }
-    });
-};
-
-// Create API message function
-async function createAPIMessage(interaction, content) {
-    const apiMessage = await APIMessage.create(Bot.channels.resolve(interaction.channel_id), content).resolveData().resolveFiles();
-    return { ...apiMessage.data, files: apiMessage.files };
+    if(!AllPermissions.includes(permission.toUpperCase())) return true;
+    const Perms = new Permissions(Number(member.permissions));
+    if(Perms.has(permission.toUpperCase())) return true;
+    return false;
 }
 
-// Keep server alive (if applicable)
+Bot.send = async function(interaction, content) {
+	return Bot.api.interactions(interaction.id, interaction.token).callback.post({
+		data: {
+			type: 4,
+			data: await createAPIMessage(interaction, content)
+		}
+	});
+};
+
+async function createAPIMessage(interaction, content) {
+	const apiMessage = await APIMessage.create(Bot.channels.resolve(interaction.channel_id), content).resolveData().resolveFiles();
+	return { ...apiMessage.data, files: apiMessage.files };
+};
 const keepAlive = require('./server.js');
+ 
+
+ 
 keepAlive();
+client.login(process.env.TOKEN);
