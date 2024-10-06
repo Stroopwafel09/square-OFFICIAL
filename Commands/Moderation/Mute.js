@@ -39,11 +39,6 @@ class Mute extends Command {
             return await this.Bot.send(interaction, `❌ You do not have permission to mute members!`);
         }
 
-        const muteRole = guild.roles.cache.find(role => role.name === "Muted");
-        if (!muteRole) {
-            return await this.Bot.send(interaction, `❌ The "Muted" role does not exist.`);
-        }
-
         // Log role positions for debugging
         console.log(`Bot's Highest Role Position: ${member.guild.me.roles.highest.position}`);
         console.log(`Target's Highest Role Position: ${Target.roles.highest.position}`);
@@ -58,13 +53,10 @@ class Mute extends Command {
         }
 
         try {
-            await Target.roles.add(muteRole); // Add the mute role
-            if (duration) {
-                setTimeout(async () => {
-                    await Target.roles.remove(muteRole); // Remove the mute role after the duration
-                    console.log(`✅ ${Target} has been unmuted after ${duration} seconds.`);
-                }, duration * 1000); // Duration in milliseconds
+            // Set timeout on the target member
+            await Target.timeout(duration ? duration * 1000 : null, `Muted by ${member.user.tag}`); // Duration in milliseconds or null for indefinite
 
+            if (duration) {
                 return await this.Bot.send(interaction, `✅ ${Target} has been muted for **${duration} seconds**.`);
             } else {
                 return await this.Bot.send(interaction, `✅ ${Target} has been muted indefinitely.`);
