@@ -1,4 +1,4 @@
-const { Client, Collection, APIMessage, Permissions, GatewayIntentBits } = require("discord.js");
+const { Client, Collection, APIMessage, PermissionsBitField, GatewayIntentBits } = require("discord.js");
 const fs = require("fs");
 const Config = (global.Config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8" })));
 
@@ -103,10 +103,11 @@ Bot.login(process.env.TOKEN).catch(err => {
     Bot.destroy();
 });
 
-const AllPermissions = new Permissions(Permissions.ALL).toArray();
+// Permissions Initialization
+const AllPermissions = Object.keys(PermissionsBitField.Flags).map(key => PermissionsBitField.Flags[key]);
 Bot.hasPermission = function (member, permission) {
     if (!AllPermissions.includes(permission.toUpperCase())) return true;
-    const Perms = new Permissions(Number(member.permissions));
+    const Perms = new PermissionsBitField(Number(member.permissions));
     if (Perms.has(permission.toUpperCase())) return true;
     return false;
 }
