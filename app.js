@@ -1,5 +1,9 @@
-const { Client, Collection, APIMessage, PermissionsBitField, GatewayIntentBits, REST, Routes } = require("discord.js");
+const { Client, Collection, APIMessage, PermissionsBitField, GatewayIntentBits } = require("discord.js");
 const fs = require("fs");
+const fetch = require("node-fetch").default;
+const AsciiTable = require("ascii-table");
+
+// Load configuration
 const Config = (global.Config = JSON.parse(fs.readFileSync("./config.json", { encoding: "utf-8" })));
 
 // Create a new client instance with required intents
@@ -15,18 +19,12 @@ const Bot = (global.Bot = new Client({
 }));
 
 const Commands = (global.Commands = new Collection());
-const AsciiTable = require("ascii-table");
 const CommandTable = new AsciiTable("List of Commands");
-const fetch = require("node-fetch").default;
-
-// Create a new REST instance
-const rest = new REST({ version: '9' }).setToken(process.env.TOKEN);
 
 Bot.once("ready", async () => {
     await new Promise(async (resolve, reject) => {
         try {
-            // Fetch existing commands from Discord
-            const commandsList = await rest.get(Routes.applicationCommands(Bot.user.id));
+            const commandsList = await Bot.api.applications(Bot.user.id).commands.get();
 
             const Dirs = fs.readdirSync("./Commands");
             for (const commandDir of Dirs) {
@@ -45,20 +43,20 @@ Bot.once("ready", async () => {
                     Command.usages.forEach(async (usage) => {
                         const existingCommand = commandsList.find(cmd => cmd.name === usage);
                         if (existingCommand) {
-                            await rest.patch(Routes.applicationCommand(Bot.user.id, existingCommand.id), {
-                                body: {
+                            await Bot.api.applications(Bot.user.id).commands(existingCommand.id).patch({
+                                data: {
                                     name: usage,
                                     description: Command.description,
                                     options: Command.options
-                                },
+                                }
                             });
                         } else {
-                            await rest.post(Routes.applicationCommands(Bot.user.id), {
-                                body: {
+                            await Bot.api.applications(Bot.user.id).commands.post({
+                                data: {
                                     name: usage,
                                     description: Command.description,
                                     options: Command.options
-                                },
+                                }
                             });
                         }
                     });
@@ -68,8 +66,14 @@ Bot.once("ready", async () => {
             }
 
             // Clean up commands that are not in the Commands collection
-            commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(async (cmd) => {
-                await rest.delete(Routes.applicationCommand(Bot.user.id, cmd.id));
+            commandsList.filter(cmd => !Array.from(Commands.keys()).includes(cmd.name)).forEach(async (cmd) => {
+                await fetch(`https://discord.com/api/v8/applications/${Bot.user.id}/commands/${cmd.id}`, {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bot ${Bot.token}`,
+                        "Content-Type": "application/json",
+                    }
+                });
             });
 
             if (CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", `❌ -> No commands found.`);
@@ -83,12 +87,14 @@ Bot.once("ready", async () => {
 
     Bot.ws.on("INTERACTION_CREATE", async (interaction) => {
         const Command = Commands.get(interaction.data.name) || Commands.find(e => e.usages.some(a => a === interaction.data.name));
-        if (!Command || (!Command.enabled || Command.enabled != true)) return;
-        if (Command.required_perm != 0 && Command.required_perm.length && !Bot.hasPermission(interaction.member, Command.required_perm)) {
+        if (!Command || (!Command.enabled || Command.enabled !== true)) return;
+
+        if (Command.required_perm !== 0 && Command.required_perm.length && !Bot.hasPermission(interaction.member, Command.required_perm)) {
             return await Bot.send(interaction, `You must have a \`${Command.required_perm.toUpperCase()}\` permission to use this command!`);
         }
+
         const Guild = Bot.guilds.cache.get(interaction.guild_id);
-        const Member = Guild.members.cache.get(interaction.member.user.id); // Use cache to get member
+        const Member = Guild.members.cache.get(interaction.member.user.id);
         return Command.run(interaction, Guild, Member, interaction.data.options);
     });
 
@@ -103,20 +109,21 @@ Bot.once("ready", async () => {
     console.log(`[BOT] \'${Bot.user.username}\' client has been activated!`);
 });
 
+// Login to Discord
 Bot.login(process.env.TOKEN).catch(err => {
-    console.error("ERROR! An occurred error while connecting to client: " + err.message);
+    console.error("ERROR! An error occurred while connecting to the client: " + err.message);
     Bot.destroy();
 });
 
-// Permissions Initialization
-const AllPermissions = Object.keys(PermissionsBitField.Flags).map(key => PermissionsBitField.Flags[key]);
+// Permissions helper
+const AllPermissions = Object.values(PermissionsBitField.Flags).map(flag => flag.toString());
 Bot.hasPermission = function (member, permission) {
-    if (!AllPermissions.includes(permission.toUpperCase())) return true;
-    const Perms = new PermissionsBitField(Number(member.permissions));
-    if (Perms.has(permission.toUpperCase())) return true;
-    return false;
-}
+    if (!AllPermissions.includes(permission.toUpperCase())) return true; // Check if the permission is valid
+    const Perms = new PermissionsBitField(member.permissions);
+    return Perms.has(permission.toUpperCase());
+};
 
+// Send a message function
 Bot.send = async function (interaction, content) {
     return Bot.api.interactions(interaction.id, interaction.token).callback.post({
         data: {
@@ -126,10 +133,12 @@ Bot.send = async function (interaction, content) {
     });
 };
 
+// Create API message function
 async function createAPIMessage(interaction, content) {
     const apiMessage = await APIMessage.create(Bot.channels.resolve(interaction.channel_id), content).resolveData().resolveFiles();
     return { ...apiMessage.data, files: apiMessage.files };
 }
 
+// Keep server alive (if applicable)
 const keepAlive = require('./server.js');
 keepAlive();
