@@ -11,7 +11,16 @@ const AsciiTable = require("ascii-table");
 const CommandTable = new AsciiTable("List of Commands");
 
 const fetch = require("node-fetch").default
+const { Client, GatewayIntentBits } = require('discord.js');
 
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
+});
 Bot.once("ready", async() => {
     await new Promise(async function(resolve, reject) {
         
