@@ -17,7 +17,7 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-	 disableEveryone: true,    
+  
     ],
 });
 Bot.once("ready", async() => {
