@@ -62,6 +62,7 @@ class Mute extends Command {
             if (duration) {
                 setTimeout(async () => {
                     await Target.roles.remove(muteRole); // Remove the mute role after the duration
+                    console.log(`✅ ${Target} has been unmuted after ${duration} seconds.`);
                 }, duration * 1000); // Duration in milliseconds
 
                 return await this.Bot.send(interaction, `✅ ${Target} has been muted for **${duration} seconds**.`);
