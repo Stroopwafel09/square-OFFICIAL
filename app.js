@@ -11,6 +11,7 @@ const AsciiTable = require("ascii-table");
 const CommandTable = new AsciiTable("List of Commands");
 
 const fetch = require("node-fetch").default
+const client = new Client
 
 Bot.once("ready", async() => {
     await new Promise(async function(resolve, reject) {
