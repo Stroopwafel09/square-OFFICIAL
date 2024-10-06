@@ -1,4 +1,5 @@
-const { Client, Collection, APIMessage, GatewayIntentBits, PermissionsBitField } = require("discord.js");
+const { Client, Collection, APIMessage, GatewayIntentBits, PermissionsBitField, REST } = require("discord.js");
+const { Routes } = require("discord-api-types/v9"); // Import the correct routes
 const fs = require("fs");
 const fetch = require("node-fetch").default;
 const AsciiTable = require("ascii-table");
@@ -21,66 +22,74 @@ const Bot = (global.Bot = new Client({
 const Commands = (global.Commands = new Collection());
 const CommandTable = new AsciiTable("List of Commands");
 
+// Create a REST instance
+const rest = new REST({ version: '9' }).setToken(process.env.TOKEN);
+
 // Ready event
 Bot.once("ready", async () => {
     await new Promise(async (resolve, reject) => {
-        const commandsList = await Bot.api.applications(Bot.user.id).commands.get();
-        const Dirs = fs.readdirSync("./Commands");
+        try {
+            const commandsList = await rest.get(Routes.applicationCommands(Bot.user.id)); // Use the REST instance to fetch commands
+            const Dirs = fs.readdirSync("./Commands");
 
-        for (const commandDir of Dirs) {
-            const Files = fs.readdirSync("./Commands/" + commandDir).filter(e => e.endsWith(".js"));
-            for (const commandFile of Files) {
-                const Command = new (require("./Commands/" + commandDir + "/" + commandFile))(Bot);
+            for (const commandDir of Dirs) {
+                const Files = fs.readdirSync("./Commands/" + commandDir).filter(e => e.endsWith(".js"));
+                for (const commandFile of Files) {
+                    const Command = new (require("./Commands/" + commandDir + "/" + commandFile))(Bot);
 
-                // Check command validity
-                if (!Command.usages || !Command.usages.length) {
-                    reject(`ERROR! Cannot load '${commandFile}' command file: Command usages not found!`);
+                    // Check command validity
+                    if (!Command.usages || !Command.usages.length) {
+                        reject(`ERROR! Cannot load '${commandFile}' command file: Command usages not found!`);
+                    }
+                    if (!Command.options || !Array.isArray(Command.options)) {
+                        reject(`ERROR! Cannot load '${commandFile}' command file: Command options is not set!`);
+                    }
+
+                    CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
+                    Commands.set(Command.usages[0], Command);
+                    
+                    Command.usages.forEach(usage => {
+                        if (commandsList.some(cmd => cmd.name === usage)) {
+                            rest.patch(Routes.applicationCommand(Bot.user.id, commandsList.find(cmd => cmd.name === usage).id), {
+                                body: {
+                                    name: usage,
+                                    description: Command.description,
+                                    options: Command.options
+                                }
+                            });
+                        } else {
+                            rest.post(Routes.applicationCommands(Bot.user.id), {
+                                body: {
+                                    name: usage,
+                                    description: Command.description,
+                                    options: Command.options
+                                }
+                            });
+                        }
+                    });
+
+                    Command.load();
                 }
-                if (!Command.options || !Array.isArray(Command.options)) {
-                    reject(`ERROR! Cannot load '${commandFile}' command file: Command options is not set!`);
-                }
+            }
 
-                CommandTable.addRow(commandFile, `Command: ${Command.usages[0]} | Aliases: ${Command.usages.slice(1).join(", ")} | Category: ${Command.category || dir}`, "✅");
-                Commands.set(Command.usages[0], Command);
-                
-                Command.usages.forEach(usage => {
-                    if (commandsList.some(cmd => cmd.name === usage)) {
-                        Bot.api.applications(Bot.user.id).commands(commandsList.find(cmd => cmd.name === usage).id).patch({
-                            data: {
-                                name: usage,
-                                description: Command.description,
-                                options: Command.options
-                            }
-                        });
-                    } else {
-                        Bot.api.applications(Bot.user.id).commands.post({
-                            data: {
-                                name: usage,
-                                description: Command.description,
-                                options: Command.options
-                            }
-                        });
+            // Remove commands that are no longer in use
+            commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(cmd => {
+                fetch(`https://discord.com/api/v8/applications/${Bot.user.id}/commands/${cmd.id}`, {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bot ${Bot.token}`,
+                        "Content-Type": "application/json",
                     }
                 });
-
-                Command.load();
-            }
-        }
-
-        // Remove commands that are no longer in use
-        commandsList.filter(cmd => !Commands.keyArray().includes(cmd.name)).forEach(cmd => {
-            fetch(`https://discord.com/api/v8/applications/${Bot.user.id}/commands/${cmd.id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bot ${Bot.token}`,
-                    "Content-Type": "application/json",
-                }
             });
-        });
 
-        if (CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", "❌ -> No commands found.");
-        console.log(CommandTable.toString());
-        resolve();
+            if (CommandTable.getRows().length < 1) CommandTable.addRow("❌", "❌", "❌ -> No commands found.");
+            console.log(CommandTable.toString());
+            resolve();
+        } catch (error) {
+            console.error("Failed to load commands:", error);
+            reject(error);
+        }
     });
 
     // Handle interactions
