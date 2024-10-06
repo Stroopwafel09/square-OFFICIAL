@@ -1,4 +1,4 @@
-const { Client, Collection, APIMessage, Permissions } = require("discord.js");
+const { Client, Collection, APIMessage, Permissions, GatewayIntentBits } = require("discord.js");
 
 
 const fs = require("fs");
@@ -11,8 +11,6 @@ const AsciiTable = require("ascii-table");
 const CommandTable = new AsciiTable("List of Commands");
 
 const fetch = require("node-fetch").default
-const { GatewayIntentBits } = require('discord.js');
-
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
