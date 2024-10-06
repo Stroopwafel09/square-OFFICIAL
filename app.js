@@ -1,4 +1,4 @@
-const { Client, Collection, APIMessage, Permissions, GatewayIntentBits } = require("discord.js");
+const { Client, Collection, APIMessage, Permissions } = require("discord.js");
 
 
 const fs = require("fs");
@@ -11,15 +11,7 @@ const AsciiTable = require("ascii-table");
 const CommandTable = new AsciiTable("List of Commands");
 
 const fetch = require("node-fetch").default
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-  
-    ],
-});
+
 Bot.once("ready", async() => {
     await new Promise(async function(resolve, reject) {
         
