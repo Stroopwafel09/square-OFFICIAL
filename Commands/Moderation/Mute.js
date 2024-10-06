@@ -35,6 +35,7 @@ class Mute extends Command {
             return await this.Bot.send(interaction, `❌ User not found in this guild!`);
         }
 
+        // Check if the member has permission to mute
         if (!member.permissions.has("MUTE_MEMBERS")) {
             return await this.Bot.send(interaction, `❌ You do not have permission to mute members!`);
         }
@@ -43,6 +44,7 @@ class Mute extends Command {
         console.log(`Bot's Highest Role Position: ${member.guild.me.roles.highest.position}`);
         console.log(`Target's Highest Role Position: ${Target.roles.highest.position}`);
 
+        // Ensure the bot can mute the target user
         if (member.guild.me.roles.highest.position <= Target.roles.highest.position) {
             return await this.Bot.send(interaction, `❌ I cannot mute this user. They might have a higher role than me!`);
         }
