@@ -11,7 +11,7 @@ const AsciiTable = require("ascii-table");
 const CommandTable = new AsciiTable("List of Commands");
 
 const fetch = require("node-fetch").default
-const { Client, GatewayIntentBits } = require('discord.js');
+const { GatewayIntentBits } = require('discord.js');
 
 const client = new Client({
     intents: [
