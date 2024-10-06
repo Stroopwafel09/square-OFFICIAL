@@ -35,16 +35,29 @@ class Mute extends Command {
             return await this.Bot.send(interaction, `❌ User not found in this guild!`);
         }
 
-        // Check if the member has permission to mute
         if (!member.permissions.has("MUTE_MEMBERS")) {
             return await this.Bot.send(interaction, `❌ You do not have permission to mute members!`);
+        }
+
+        let muteRole = guild.roles.cache.find(role => role.name === "Muted");
+        if (!muteRole) {
+            // Create the "Muted" role if it doesn't exist
+            muteRole = await guild.roles.create({
+                name: "Muted",
+                permissions: [
+                    // Deny sending messages in text channels
+                    "SendMessages",
+                    "Speak", // Deny speaking in voice channels
+                    "Connect" // Deny joining voice channels
+                ],
+                reason: "Muted role for muting members."
+            });
         }
 
         // Log role positions for debugging
         console.log(`Bot's Highest Role Position: ${member.guild.me.roles.highest.position}`);
         console.log(`Target's Highest Role Position: ${Target.roles.highest.position}`);
 
-        // Ensure the bot can mute the target user
         if (member.guild.me.roles.highest.position <= Target.roles.highest.position) {
             return await this.Bot.send(interaction, `❌ I cannot mute this user. They might have a higher role than me!`);
         }
@@ -55,10 +68,13 @@ class Mute extends Command {
         }
 
         try {
-            // Set timeout on the target member
-            await Target.timeout(duration ? duration * 1000 : null, `Muted by ${member.user.tag}`); // Duration in milliseconds or null for indefinite
-
+            await Target.roles.add(muteRole); // Add the mute role
             if (duration) {
+                setTimeout(async () => {
+                    await Target.roles.remove(muteRole); // Remove the mute role after the duration
+                    console.log(`✅ ${Target} has been unmuted after ${duration} seconds.`);
+                }, duration * 1000); // Duration in milliseconds
+
                 return await this.Bot.send(interaction, `✅ ${Target} has been muted for **${duration} seconds**.`);
             } else {
                 return await this.Bot.send(interaction, `✅ ${Target} has been muted indefinitely.`);
